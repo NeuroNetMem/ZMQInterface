@@ -34,6 +34,93 @@
 #define ZMQINTERFACE_H_INCLUDED
 
 
+#include "../../JuceLibraryCode/JuceHeader.h"
+#include "../GenericProcessor/GenericProcessor.h"
+
+
+
+//=============================================================================
+/*
+ */
+class ZmqInterface    : public GenericProcessor
+{
+public:
+    /** The class constructor, used to initialize any members. */
+    ZmqInterface(const String &processorName = "Zmq Interface");
+    
+    /** The class destructor, used to deallocate memory */
+    ~ZmqInterface();
+    
+    /** Determines whether the processor is treated as a source. */
+    virtual bool isSource()
+    {
+        return false;
+    }
+    
+    /** Determines whether the processor is treated as a sink. */
+    virtual bool isSink()
+    {
+        return false;
+    }
+    
+    /** Defines the functionality of the processor.
+     
+     The process method is called every time a new data buffer is available.
+     
+     Processors can either use this method to add new data, manipulate existing
+     data, or send data to an external target (such as a display or other hardware).
+     
+     Continuous signals arrive in the "buffer" variable, event data (such as TTLs
+     and spikes) is contained in the "events" variable, and "nSamples" holds the
+     number of continous samples in the current buffer (which may differ from the
+     size of the buffer).
+     */
+    virtual void process(AudioSampleBuffer& buffer, MidiBuffer& events);
+    
+    /** Any variables used by the "process" function _must_ be modified only through
+     this method while data acquisition is active. If they are modified in any
+     other way, the application will crash.  */
+    void setParameter(int parameterIndex, float newValue);
+    
+    AudioProcessorEditor* createEditor();
+    
+    bool hasEditor() const
+    {
+        return true;
+    }
+    
+    void updateSettings();
+    
+    bool isReady();
+    
+
+    
+    void resetConnections();
+private:
+    int createContext();
+    int createDataSocket();
+    int close();
+    int sendData(float *data, int nChannels, int nSamples, int nRealSamples);
+    int sendEvent( uint8 type,
+                  int sampleNum,
+                  uint8 eventId,
+                  uint8 eventChannel,
+                  uint8 numBytes,
+                  uint8* eventData);
+    template<typename T> int sendParam(String name, T value);
+
+    
+    void *context = 0;
+    void *socket = 0;
+    int flag = 0;
+    int messageNumber = 0;
+
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ZmqInterface);
+    
+};
+
+
+
 
 
 
