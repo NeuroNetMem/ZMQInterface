@@ -93,7 +93,7 @@ public:
     
     bool isReady();
     
-
+    void handleEvent(int eventType, MidiMessage& event, int sampleNum);
     
     void resetConnections();
 private:
@@ -106,7 +106,7 @@ private:
                   uint8 eventId,
                   uint8 eventChannel,
                   uint8 numBytes,
-                  uint8* eventData);
+                  const uint8* eventData);
     template<typename T> int sendParam(String name, T value);
 
     

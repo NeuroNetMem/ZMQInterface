@@ -189,7 +189,7 @@ int ZmqInterface::sendEvent( uint8 type,
                              uint8 eventId,
                              uint8 eventChannel,
                              uint8 numBytes,
-                             uint8* eventData)
+                             const uint8* eventData)
 {
     int size;
     
@@ -291,6 +291,7 @@ template<typename T> int ZmqInterface::sendParam(String name, T value)
     return size;
 }
 
+
 AudioProcessorEditor* ZmqInterface::createEditor()
 {
     
@@ -326,12 +327,37 @@ void ZmqInterface::resetConnections()
     return;
 }
 
+void ZmqInterface::handleEvent(int eventType, MidiMessage& event, int sampleNum)
+{
+    
+    const uint8* dataptr = event.getRawData();
+    int size = event.getRawDataSize();
+    uint8 numBytes;
+    if(size > 6)
+        numBytes = size - 6;
+    else
+        numBytes = 0;
+    int eventId = *(dataptr+2);
+    int eventChannel = *(dataptr+3);
+    
+    
+    sendEvent(eventType,
+              sampleNum,
+              eventId,
+              eventChannel,
+              numBytes,
+              dataptr+6);
+}
+
+
 void ZmqInterface::process(AudioSampleBuffer& buffer,
                            MidiBuffer& events)
 {
     if(!socket)
         createDataSocket();
-    
+
+    checkForEvents(events); // see if we got any TTL events
+
     sendData(*(buffer.getArrayOfWritePointers()), buffer.getNumChannels(), buffer.getNumSamples(), getNumSamples(0));
     
 }
