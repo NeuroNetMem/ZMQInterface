@@ -115,23 +115,47 @@ int ZmqInterface::close()
 
 int ZmqInterface::sendData(float *data, int nChannels, int nSamples, int nRealSamples)
 {
-    MemoryOutputStream jsonHeader;
     
     messageNumber++;
     
-    jsonHeader << "{ \"messageNo\": " << messageNumber << "," << newLine;
-    jsonHeader << "  \"type\": \"data\"," << newLine;
-    jsonHeader << " \"content\": " << newLine;
-    jsonHeader << "{ \"nChannels\": " << nChannels << "," << newLine;
-    jsonHeader << " \"nSamples\": " << nSamples << "," << newLine;
-    jsonHeader << " \"nRealSamples\": " << nRealSamples <<  newLine;
-    jsonHeader << "}," << newLine;
-    jsonHeader << " \"dataSize\": " << (int)(nChannels * nSamples * sizeof(float)) << newLine;
-    jsonHeader << "}";
+//    MemoryOutputStream jsonHeader;
+//    jsonHeader << "{ \"messageNo\": " << messageNumber << "," << newLine;
+//    jsonHeader << "  \"type\": \"data\"," << newLine;
+//    jsonHeader << " \"content\": " << newLine;
+//    jsonHeader << "{ \"nChannels\": " << nChannels << "," << newLine;
+//    jsonHeader << " \"nSamples\": " << nSamples << "," << newLine;
+//    jsonHeader << " \"nRealSamples\": " << nRealSamples <<  newLine;
+//    jsonHeader << "}," << newLine;
+//    jsonHeader << " \"dataSize\": " << (int)(nChannels * nSamples * sizeof(float)) << newLine;
+//    jsonHeader << "}";
+//    
+//    MemoryBlock headerBlock = jsonHeader.getMemoryBlock();
+
+    DynamicObject::Ptr obj = new DynamicObject();
     
-    MemoryBlock headerBlock = jsonHeader.getMemoryBlock();
-    void *headerData = headerBlock.getData();
-    size_t headerSize = headerBlock.getSize();
+    int mn = messageNumber;
+    obj->setProperty("messageNo", mn);
+    obj->setProperty("type", "data");
+    
+    DynamicObject::Ptr c_obj = new DynamicObject();
+    
+    c_obj->setProperty("nChannels", nChannels);
+    c_obj->setProperty("nSamples", nSamples);
+    c_obj->setProperty("nRealSamples", nRealSamples);
+    
+    obj->setProperty("content", var(c_obj));
+    obj->setProperty("dataSize", (int)(nChannels * nSamples * sizeof(float)));
+    
+    var json(obj);
+    
+    String s = JSON::toString(json);
+    void *headerData = (void *)s.toRawUTF8();
+    
+//    std::cout << "the string: " << s << std::endl;
+//    std::cout << "length: " << s.length() << std::endl;
+//    std::cout << (char *)headerData << std::endl;
+    size_t headerSize = s.length();
+    
     zmq_msg_t messageHeader;
     zmq_msg_init_size(&messageHeader, headerSize);
     memcpy(zmq_msg_data(&messageHeader), headerData, headerSize);
@@ -147,6 +171,7 @@ int ZmqInterface::sendData(float *data, int nChannels, int nSamples, int nRealSa
     jassert(size_m);
     size += size_m;
     zmq_msg_close(&message);
+ 
     return size;
 }
 
@@ -166,25 +191,40 @@ int ZmqInterface::sendEvent( uint8 type,
                              uint8 numBytes,
                              uint8* eventData)
 {
-    MemoryOutputStream jsonHeader;
     int size;
     
     messageNumber++;
+
+//    MemoryOutputStream jsonHeader;
+//    jsonHeader << "{ \"messageNo\": " << messageNumber << "," << newLine;
+//    jsonHeader << "  \"type\": \"event\"," << newLine;
+//    jsonHeader << " \"content\": " << newLine;
+//    jsonHeader << " { \"type\": " << type << "," << newLine;
+//    jsonHeader << " \"sampleNum\": " << sampleNum << "," << newLine;
+//    jsonHeader << " \"eventId\": " << eventId << "," << newLine;
+//    jsonHeader << " \"eventChannel\": " << eventChannel  << newLine;
+//    jsonHeader << "}," << newLine;
+//    jsonHeader << " \"dataSize\": " << numBytes << newLine;
+//    jsonHeader << "}";
+//    MemoryBlock headerBlock = jsonHeader.getMemoryBlock();
     
-    jsonHeader << "{ \"messageNo\": " << messageNumber << "," << newLine;
-    jsonHeader << "  \"type\": \"event\"," << newLine;
-    jsonHeader << " \"content\": " << newLine;
-    jsonHeader << " { \"type\": " << type << "," << newLine;
-    jsonHeader << " \"sampleNum\": " << sampleNum << "," << newLine;
-    jsonHeader << " \"eventId\": " << eventId << "," << newLine;
-    jsonHeader << " \"eventChannel\": " << eventChannel  << newLine;
-    jsonHeader << "}," << newLine;
-    jsonHeader << " \"dataSize\": " << numBytes << newLine;
-    jsonHeader << "}";
+    DynamicObject::Ptr obj = new DynamicObject();
     
-    MemoryBlock headerBlock = jsonHeader.getMemoryBlock();
-    void *headerData = headerBlock.getData();
-    size_t headerSize = headerBlock.getSize();
+    obj->setProperty("messageNo", messageNumber);
+    obj->setProperty("type", "event");
+    
+    DynamicObject::Ptr c_obj = new DynamicObject();
+    c_obj->setProperty("type", type);
+    c_obj->setProperty("sampleNum", sampleNum);
+    c_obj->setProperty("eventId", eventId);
+    c_obj->setProperty("eventChannel", eventChannel);
+    obj->setProperty("content", var(c_obj));
+    obj->setProperty("dataSize", numBytes);
+    
+    var json (obj);
+    String s = JSON::toString(json);
+    void *headerData = (void *)s.toRawUTF8();
+    size_t headerSize = s.length();
     zmq_msg_t messageHeader;
     zmq_msg_init_size(&messageHeader, headerSize);
     memcpy(zmq_msg_data(&messageHeader), headerData, headerSize);
@@ -212,22 +252,35 @@ int ZmqInterface::sendEvent( uint8 type,
 
 template<typename T> int ZmqInterface::sendParam(String name, T value)
 {
-    MemoryOutputStream jsonHeader;
     int size;
     
     messageNumber++;
     
-    jsonHeader << "{ \"messageNo\": " << messageNumber << "," << newLine;
-    jsonHeader << "  \"type\": \"param\"," << newLine;
-    jsonHeader << " \"content\": " << newLine;
-    jsonHeader << " { \"" << name << "\": " << value  << newLine;
-    jsonHeader << "}," << newLine;
-    jsonHeader << " \"dataSize\": " << 0 << newLine;
-    jsonHeader << "}";
+//    MemoryOutputStream jsonHeader;
+//    jsonHeader << "{ \"messageNo\": " << messageNumber << "," << newLine;
+//    jsonHeader << "  \"type\": \"param\"," << newLine;
+//    jsonHeader << " \"content\": " << newLine;
+//    jsonHeader << " { \"" << name << "\": " << value  << newLine;
+//    jsonHeader << "}," << newLine;
+//    jsonHeader << " \"dataSize\": " << 0 << newLine;
+//    jsonHeader << "}";
     
-    MemoryBlock headerBlock = jsonHeader.getMemoryBlock();
-    void *headerData = headerBlock.getData();
-    size_t headerSize = headerBlock.getSize();
+    
+    DynamicObject::Ptr obj = new DynamicObject();
+    
+    obj->setProperty("messageNo", messageNumber);
+    obj->setProperty("type", "event");
+    DynamicObject::Ptr c_obj = new DynamicObject();
+    c_obj->setProperty(name, value);
+    
+    obj->setProperty("content", var(c_obj));
+    obj->setProperty("dataSize", 0);
+    
+    var json (obj);
+    String s = JSON::toString(json);
+    void *headerData = (void *)s.toRawUTF8();
+    size_t headerSize = s.length();
+    
     zmq_msg_t messageHeader;
     zmq_msg_init_size(&messageHeader, headerSize);
     memcpy(zmq_msg_data(&messageHeader), headerData, headerSize);
