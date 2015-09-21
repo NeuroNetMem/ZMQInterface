@@ -34,7 +34,7 @@
 #include <string.h>
 #include <iostream>
 #include <time.h>
-
+#include <errno.h>
 #include "ZmqInterface.h"
 
 #define DEBUG_ZMQ
@@ -59,7 +59,6 @@ ZmqInterface::ZmqInterface(const String &processorName)
     threadRunning = false;
     openListenSocket();
     openKillSocket();
-    openPipeOutSocket();
     
     // TODO initialize structures to keep track of apps
     
@@ -194,8 +193,6 @@ void ZmqInterface::run()
         {
             size = zmq_recv(listenSocket, buffer, MAX_MESSAGE_LENGTH-1, 0);
             buffer[size] = 0;
-            std::cout << "received something" << std::endl;
-            std::cout << buffer << std::endl;
             
 
             
@@ -216,7 +213,6 @@ void ZmqInterface::run()
             EventData ed;
             String app = v["application"];
             String appUuid = v["uuid"];
-            std::cout << "event from app " << app << " with UUID " << appUuid << std::endl;
             strncpy(ed.application, app.toRawUTF8(),  255);
             strncpy(ed.uuid, appUuid.toRawUTF8(), 255);
             ed.eventTime = time(NULL);
@@ -249,7 +245,7 @@ void ZmqInterface::run()
             zmq_msg_t message;
             zmq_msg_init_size(&message, sizeof(EventData));
             memcpy(zmq_msg_data(&message), &ed, sizeof(EventData));
-            int size_m = zmq_msg_send(&message, socket, 0);
+            int size_m = zmq_msg_send(&message, pipeInSocket, 0);
             jassert(size_m);
             size += size_m;
             zmq_msg_close(&message);
@@ -275,7 +271,7 @@ void ZmqInterface::run()
     }
     closeListenSocket();
     
-    // TODO close the pipe out socket
+    zmq_close(pipeInSocket);
     zmq_close(controlSocket);
     delete buffer;
     threadRunning = false;
@@ -538,7 +534,31 @@ void ZmqInterface::handleEvent(int eventType, MidiMessage& event, int sampleNum)
 
 int ZmqInterface::receiveEvents(MidiBuffer &events)
 {
-    // TODO
+    
+    EventData ed;
+    while(true)
+    {
+        int size = zmq_recv(pipeOutSocket, &ed, sizeof(ed), ZMQ_DONTWAIT);
+        if(size == -1)
+        {
+            if(zmq_errno() == EAGAIN)
+            {
+                break;
+            }
+            else
+            {
+                std::cout << "pipe out error: " << zmq_strerror(zmq_errno()) << std::endl;
+            }
+        }
+        std::cout << "adding events" << std::endl;
+        std::cout << "chan " << (int)ed.eventChannel << " id " << (int)ed.eventId << " sample n "
+        << (int)ed.sampleNum << " type " << (int)ed.type <<
+        std::endl;
+        
+        addEvent(events, ed.type, ed.sampleNum, ed.eventId, ed.eventChannel, ed.numBytes, NULL, false);
+        // TODO allow for event data
+    }
+
     return 0;
 }
 
@@ -547,6 +567,10 @@ void ZmqInterface::process(AudioSampleBuffer& buffer,
 {
     if(!socket)
         createDataSocket();
+    
+    if(!pipeOutSocket)
+        openPipeOutSocket();
+
 
     checkForEvents(events); // see if we got any TTL events
 
