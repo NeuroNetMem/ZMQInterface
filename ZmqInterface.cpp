@@ -33,11 +33,24 @@
 #include <zmq.h>
 #include <string.h>
 #include <iostream>
+#include <time.h>
 
 #include "ZmqInterface.h"
 
 #define DEBUG_ZMQ
 const int MAX_MESSAGE_LENGTH = 64000;
+
+struct EventData {
+    uint8 type;
+    uint8 eventId;
+    uint8 eventChannel;
+    uint8 numBytes;
+    int sampleNum;
+    time_t eventTime;
+    char application[256];
+    char uuid[256];
+    bool isEvent;
+};
 
 ZmqInterface::ZmqInterface(const String &processorName)
     : GenericProcessor(processorName), Thread("Zmq thread")
@@ -46,6 +59,11 @@ ZmqInterface::ZmqInterface(const String &processorName)
     threadRunning = false;
     openListenSocket();
     openKillSocket();
+    openPipeOutSocket();
+    
+    // TODO initialize structures to keep track of apps
+    
+    
 }
 
 ZmqInterface::~ZmqInterface()
@@ -62,6 +80,8 @@ ZmqInterface::~ZmqInterface()
     stopThread(200); // this is probably overkill but won't hurt
     closeDataSocket();
     zmq_close(killSocket);
+    zmq_close(pipeOutSocket);
+    
     sleep(500);
     
     if(context)
@@ -69,7 +89,6 @@ ZmqInterface::~ZmqInterface()
         zmq_ctx_destroy(context);
         context = 0;
     }
-
 }
 
 int ZmqInterface::createContext()
@@ -138,6 +157,12 @@ void ZmqInterface::openKillSocket()
     zmq_connect(killSocket, "inproc://zmqthreadcontrol");
 }
 
+void ZmqInterface::openPipeOutSocket()
+{
+    pipeOutSocket = zmq_socket(context, ZMQ_PAIR);
+    zmq_bind(pipeOutSocket, "inproc://zmqthreadpipe");
+}
+
 void ZmqInterface::run()
 {
     listenSocket = zmq_socket(context, ZMQ_REP);
@@ -153,6 +178,8 @@ void ZmqInterface::run()
     controlSocket = zmq_socket(context, ZMQ_PAIR);
     zmq_bind(controlSocket, "inproc://zmqthreadcontrol");
     
+    pipeInSocket = zmq_socket(context, ZMQ_PAIR);
+    zmq_connect(pipeInSocket, "inproc://zmqthreadpipe");
     
     zmq_pollitem_t items [] = {
         { listenSocket, 0, ZMQ_POLLIN, 0 },
@@ -170,10 +197,10 @@ void ZmqInterface::run()
             std::cout << "received something" << std::endl;
             std::cout << buffer << std::endl;
             
+
+            
             if(size < 0)
             {
-                if((!threadRunning) || threadShouldExit())
-                    break; // we're exiting
                 std::cout << "failed in receiving listen socket" << std::endl;
                 std::cout << zmq_strerror(zmq_errno()) << std::endl;
                 assert(false);
@@ -184,10 +211,50 @@ void ZmqInterface::run()
 #endif
             Result rs = JSON::parse(String(buffer), v);
             bool ok = rs.wasOk();
-            DynamicObject::Ptr obj = new DynamicObject(*v.getDynamicObject());
-            lock.enter();
-            networkMessagesQueue.push(obj);
-            lock.exit();
+
+
+            EventData ed;
+            String app = v["application"];
+            String appUuid = v["uuid"];
+            std::cout << "event from app " << app << " with UUID " << appUuid << std::endl;
+            strncpy(ed.application, app.toRawUTF8(),  255);
+            strncpy(ed.uuid, appUuid.toRawUTF8(), 255);
+            ed.eventTime = time(NULL);
+            
+            String evT = v["type"];
+            
+            if(evT == "event")
+            {
+                ed.isEvent = true;
+                ed.eventChannel = (int)v["event"]["event_channel"];
+                ed.eventId = (int)v["event"]["event_id"];
+                ed.numBytes = 0; // TODO  allow for event data
+                ed.sampleNum = (int)v["event"]["sample_num"];
+                ed.type = (int)v["event"]["type"];
+                std::cout << "chan " << (int)ed.eventChannel << " id " << (int)ed.eventId << " sample n "
+                    << (int)ed.sampleNum << " type " << (int)ed.type <<
+                    std::endl;
+            }
+            else
+            {
+                ed.isEvent = false;
+            }
+            
+            // TODO allow for event data
+            
+            
+            
+            // TODO send it to process thread
+            
+            zmq_msg_t message;
+            zmq_msg_init_size(&message, sizeof(EventData));
+            memcpy(zmq_msg_data(&message), &ed, sizeof(EventData));
+            int size_m = zmq_msg_send(&message, socket, 0);
+            jassert(size_m);
+            size += size_m;
+            zmq_msg_close(&message);
+            
+            // send response
             String response;
             if(ok)
             {
@@ -198,6 +265,9 @@ void ZmqInterface::run()
                 response = String("JSON message could not be read");
             }
             zmq_send(listenSocket, response.getCharPointer(), response.length(), 0);
+            if((!threadRunning) || threadShouldExit())
+                break; // we're exiting
+
         }
         else
             break;
@@ -205,6 +275,7 @@ void ZmqInterface::run()
     }
     closeListenSocket();
     
+    // TODO close the pipe out socket
     zmq_close(controlSocket);
     delete buffer;
     threadRunning = false;
@@ -277,7 +348,6 @@ int ZmqInterface::sendData(float *data, int nChannels, int nSamples, int nRealSa
     int size = zmq_msg_send(&messageEnvelope, socket, ZMQ_SNDMORE);
     jassert(size != -1);
     zmq_msg_close(&messageEnvelope);
-    
     
     zmq_msg_t messageHeader;
     zmq_msg_init_size(&messageHeader, headerSize);
@@ -448,7 +518,6 @@ void ZmqInterface::resetConnections()
 
 void ZmqInterface::handleEvent(int eventType, MidiMessage& event, int sampleNum)
 {
-    
     const uint8* dataptr = event.getRawData();
     int size = event.getRawDataSize();
     uint8 numBytes;
@@ -459,7 +528,6 @@ void ZmqInterface::handleEvent(int eventType, MidiMessage& event, int sampleNum)
     int eventId = *(dataptr+2);
     int eventChannel = *(dataptr+3);
     
-    
     sendEvent(eventType,
               sampleNum,
               eventId,
@@ -468,6 +536,11 @@ void ZmqInterface::handleEvent(int eventType, MidiMessage& event, int sampleNum)
               dataptr+6);
 }
 
+int ZmqInterface::receiveEvents(MidiBuffer &events)
+{
+    // TODO
+    return 0;
+}
 
 void ZmqInterface::process(AudioSampleBuffer& buffer,
                            MidiBuffer& events)
@@ -478,6 +551,8 @@ void ZmqInterface::process(AudioSampleBuffer& buffer,
     checkForEvents(events); // see if we got any TTL events
 
     sendData(*(buffer.getArrayOfWritePointers()), buffer.getNumChannels(), buffer.getNumSamples(), getNumSamples(0));
+    
+    receiveEvents(events);
     
 }
 

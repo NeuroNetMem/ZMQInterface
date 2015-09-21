@@ -96,11 +96,7 @@ public:
     
     void resetConnections();
     void run();
-    void openListenSocket();
-    void openKillSocket();
-    int closeListenSocket();
-    int createDataSocket();
-    int closeDataSocket();
+
 
     // TODO void saveCustomParametersToXml(XmlElement* parentElement);
     // TODO void loadCustomParametersFromXml();
@@ -111,6 +107,13 @@ public:
 
 private:
     int createContext();
+    void openListenSocket();
+    void openKillSocket();
+    void openPipeOutSocket();
+    int closeListenSocket();
+    int createDataSocket();
+    int closeDataSocket();
+
     void handleEvent(int eventType, MidiMessage& event, int sampleNum);
     int sendData(float *data, int nChannels, int nSamples, int nRealSamples);
     int sendEvent( uint8 type,
@@ -119,6 +122,8 @@ private:
                   uint8 eventChannel,
                   uint8 numBytes,
                   const uint8* eventData);
+    int receiveEvents(MidiBuffer &events);
+    
     template<typename T> int sendParam(String name, T value);
 
     
@@ -127,11 +132,13 @@ private:
     void *listenSocket = 0;
     void *controlSocket = 0;
     void *killSocket = 0;
+    void *pipeInSocket = 0;
+    void *pipeOutSocket = 0;
+    
     int flag = 0;
     int messageNumber = 0;
     int dataPort = 5556; //TODO make this editable
     int listenPort = 5557;
-    std::queue<DynamicObject*> networkMessagesQueue;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ZmqInterface);
     
 };
