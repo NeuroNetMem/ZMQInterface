@@ -45,13 +45,31 @@ ZmqInterface::ZmqInterface(const String &processorName)
     createContext();
     threadRunning = false;
     openListenSocket();
+    openKillSocket();
 }
 
 ZmqInterface::~ZmqInterface()
 {
+    threadRunning = false;
+    // send the kill signal to the thread
+    
+    zmq_msg_t messageEnvelope;
+    zmq_msg_init_size(&messageEnvelope, strlen("STOP")+1);
+    memcpy(zmq_msg_data(&messageEnvelope), "STOP", strlen("STOP")+1);
+    zmq_msg_send(&messageEnvelope, killSocket, 0);
+    zmq_msg_close(&messageEnvelope);
+    
+    stopThread(200); // this is probably overkill but won't hurt
     closeDataSocket();
-    closeListenSocket();
-    zmq_ctx_destroy(context);
+    zmq_close(killSocket);
+    sleep(500);
+    
+    if(context)
+    {
+        zmq_ctx_destroy(context);
+        context = 0;
+    }
+
 }
 
 int ZmqInterface::createContext()
@@ -88,8 +106,10 @@ int ZmqInterface::closeDataSocket()
 {
     if(socket)
     {
+        std::cout << "close data socket" << std::endl;
         int rc = zmq_close(socket);
         assert(rc==0);
+        socket = 0;
     }
     return 0;
 }
@@ -102,15 +122,20 @@ void ZmqInterface::openListenSocket()
 int ZmqInterface::closeListenSocket()
 {
     int rc = 0;
-    std::cout << "close listen socket" << std::endl;
-    if(threadRunning)
-    {
-        threadRunning = false;
-        rc = zmq_close(listenSocket);
-        // TODO do we need to close the socket here? will this be called when acq is paused?
-    }
+         if(listenSocket)
+        {
+            std::cout << "close listen socket" << std::endl;
+            rc = zmq_close(listenSocket);
+            listenSocket = 0;
+        }
     
     return rc;
+}
+
+void ZmqInterface::openKillSocket()
+{
+    killSocket = zmq_socket(context, ZMQ_PAIR);
+    zmq_connect(killSocket, "inproc://zmqthreadcontrol");
 }
 
 void ZmqInterface::run()
@@ -124,42 +149,63 @@ void ZmqInterface::run()
     char* buffer = new char[MAX_MESSAGE_LENGTH];
 
     int size;
-    while(threadRunning)
+
+    controlSocket = zmq_socket(context, ZMQ_PAIR);
+    zmq_bind(controlSocket, "inproc://zmqthreadcontrol");
+    
+    
+    zmq_pollitem_t items [] = {
+        { listenSocket, 0, ZMQ_POLLIN, 0 },
+        { controlSocket, 0, ZMQ_POLLIN, 0 }
+    };
+    
+
+    while(threadRunning && (!threadShouldExit()))
     {
-        size = zmq_recv(listenSocket, buffer, MAX_MESSAGE_LENGTH-1, 0);
-        buffer[size] = 0;
-        std::cout << "received something" << std::endl;
-        std::cout << buffer << std::endl;
-        
-        if(size < 0)
+        zmq_poll (items, 2, -1);
+        if(items[0].revents & ZMQ_POLLIN)
         {
-            std::cout << "failed in receiving listen socket" << std::endl;
-            std::cout << zmq_strerror(zmq_errno()) << std::endl;
-            assert(false);
-        }
-        var v;
+            size = zmq_recv(listenSocket, buffer, MAX_MESSAGE_LENGTH-1, 0);
+            buffer[size] = 0;
+            std::cout << "received something" << std::endl;
+            std::cout << buffer << std::endl;
+            
+            if(size < 0)
+            {
+                if((!threadRunning) || threadShouldExit())
+                    break; // we're exiting
+                std::cout << "failed in receiving listen socket" << std::endl;
+                std::cout << zmq_strerror(zmq_errno()) << std::endl;
+                assert(false);
+            }
+            var v;
 #ifdef ZMQ_DEBUG
-        std::cout << "in listening thread: " << String(buffer) << std::endl;
+            std::cout << "in listening thread: " << String(buffer) << std::endl;
 #endif
-        Result rs = JSON::parse(String(buffer), v);
-        bool ok = rs.wasOk();
-        DynamicObject::Ptr obj = new DynamicObject(*v.getDynamicObject());
-        lock.enter();
-        networkMessagesQueue.push(obj);
-        lock.exit();
-        String response;
-        if(ok)
-        {
-            response = String("message correctly parsed");
+            Result rs = JSON::parse(String(buffer), v);
+            bool ok = rs.wasOk();
+            DynamicObject::Ptr obj = new DynamicObject(*v.getDynamicObject());
+            lock.enter();
+            networkMessagesQueue.push(obj);
+            lock.exit();
+            String response;
+            if(ok)
+            {
+                response = String("message correctly parsed");
+            }
+            else
+            {
+                response = String("JSON message could not be read");
+            }
+            zmq_send(listenSocket, response.getCharPointer(), response.length(), 0);
         }
         else
-        {
-            response = String("JSON message could not be read");
-        }
-        zmq_send(listenSocket, response.getCharPointer(), response.length(), 0);
+            break;
         
     }
     closeListenSocket();
+    
+    zmq_close(controlSocket);
     delete buffer;
     threadRunning = false;
     return;

@@ -97,6 +97,7 @@ public:
     void resetConnections();
     void run();
     void openListenSocket();
+    void openKillSocket();
     int closeListenSocket();
     int createDataSocket();
     int closeDataSocket();
@@ -124,6 +125,8 @@ private:
     void *context = 0;
     void *socket = 0;
     void *listenSocket = 0;
+    void *controlSocket = 0;
+    void *killSocket = 0;
     int flag = 0;
     int messageNumber = 0;
     int dataPort = 5556; //TODO make this editable
