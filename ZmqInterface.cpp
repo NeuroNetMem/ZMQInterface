@@ -205,14 +205,14 @@ int ZmqInterface::sendData(float *data, int nChannels, int nSamples, int nRealSa
     DynamicObject::Ptr obj = new DynamicObject();
     
     int mn = messageNumber;
-    obj->setProperty("messageNo", mn);
+    obj->setProperty("message_no", mn);
     obj->setProperty("type", "data");
     
     DynamicObject::Ptr c_obj = new DynamicObject();
     
-    c_obj->setProperty("nChannels", nChannels);
-    c_obj->setProperty("nSamples", nSamples);
-    c_obj->setProperty("nRealSamples", nRealSamples);
+    c_obj->setProperty("n_channels", nChannels);
+    c_obj->setProperty("n_samples", nSamples);
+    c_obj->setProperty("n_real_samples", nRealSamples);
     
     obj->setProperty("content", var(c_obj));
     obj->setProperty("dataSize", (int)(nChannels * nSamples * sizeof(float)));
@@ -266,16 +266,16 @@ int ZmqInterface::sendEvent( uint8 type,
     
     DynamicObject::Ptr obj = new DynamicObject();
     
-    obj->setProperty("messageNo", messageNumber);
+    obj->setProperty("message_no", messageNumber);
     obj->setProperty("type", "event");
     
     DynamicObject::Ptr c_obj = new DynamicObject();
     c_obj->setProperty("type", type);
-    c_obj->setProperty("sampleNum", sampleNum);
-    c_obj->setProperty("eventId", eventId);
-    c_obj->setProperty("eventChannel", eventChannel);
+    c_obj->setProperty("sample_num", sampleNum);
+    c_obj->setProperty("event_id", eventId);
+    c_obj->setProperty("event_channel", eventChannel);
     obj->setProperty("content", var(c_obj));
-    obj->setProperty("dataSize", numBytes);
+    obj->setProperty("data_size", numBytes);
     
     var json (obj);
     String s = JSON::toString(json);
@@ -333,13 +333,13 @@ template<typename T> int ZmqInterface::sendParam(String name, T value)
     
     DynamicObject::Ptr obj = new DynamicObject();
     
-    obj->setProperty("messageNo", messageNumber);
+    obj->setProperty("message_no", messageNumber);
     obj->setProperty("type", "event");
     DynamicObject::Ptr c_obj = new DynamicObject();
     c_obj->setProperty(name, value);
     
     obj->setProperty("content", var(c_obj));
-    obj->setProperty("dataSize", 0);
+    obj->setProperty("data_size", 0);
     
     var json (obj);
     String s = JSON::toString(json);
