@@ -37,12 +37,13 @@
 #include "../../JuceLibraryCode/JuceHeader.h"
 #include "../GenericProcessor/GenericProcessor.h"
 
+#include <queue>
 
 
 //=============================================================================
 /*
  */
-class ZmqInterface    : public GenericProcessor
+class ZmqInterface    : public GenericProcessor, public Thread
 {
 public:
     /** The class constructor, used to initialize any members. */
@@ -93,13 +94,23 @@ public:
     
     bool isReady();
     
-    void handleEvent(int eventType, MidiMessage& event, int sampleNum);
-    
     void resetConnections();
+    void run();
+    void openListenSocket();
+    int closeListenSocket();
+    int createDataSocket();
+    int closeDataSocket();
+
+    // TODO void saveCustomParametersToXml(XmlElement* parentElement);
+    // TODO void loadCustomParametersFromXml();
+
+    CriticalSection lock;
+    bool threadRunning ;
+    // TODO void setNewListeningPort(int port);
+
 private:
     int createContext();
-    int createDataSocket();
-    int close();
+    void handleEvent(int eventType, MidiMessage& event, int sampleNum);
     int sendData(float *data, int nChannels, int nSamples, int nRealSamples);
     int sendEvent( uint8 type,
                   int sampleNum,
@@ -112,9 +123,12 @@ private:
     
     void *context = 0;
     void *socket = 0;
+    void *listenSocket = 0;
     int flag = 0;
     int messageNumber = 0;
-
+    int dataPort = 5556; //TODO make this editable
+    int listenPort = 5557;
+    std::queue<DynamicObject*> networkMessagesQueue;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ZmqInterface);
     
 };

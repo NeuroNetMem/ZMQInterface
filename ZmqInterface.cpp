@@ -36,15 +36,21 @@
 
 #include "ZmqInterface.h"
 
+#define DEBUG_ZMQ
+const int MAX_MESSAGE_LENGTH = 64000;
+
 ZmqInterface::ZmqInterface(const String &processorName)
-    : GenericProcessor(processorName)
+    : GenericProcessor(processorName), Thread("Zmq thread")
 {
     createContext();
+    threadRunning = false;
+    openListenSocket();
 }
 
 ZmqInterface::~ZmqInterface()
 {
-    close();
+    closeDataSocket();
+    closeListenSocket();
     zmq_ctx_destroy(context);
 }
 
@@ -63,16 +69,22 @@ int ZmqInterface::createDataSocket()
         socket = zmq_socket(context, ZMQ_PUB);
         if(!socket)
             return -1;
-        int rc = zmq_bind(socket, "tcp://*:5556");
-        assert(rc == 0);
-        rc = zmq_bind(socket, "ipc://data.ipc");
-        assert(rc == 0);
+        String urlstring;
+        urlstring = String("tcp://*:") + String(dataPort);
+        std::cout << urlstring << std::endl;
+        int rc = zmq_bind(socket, urlstring.toRawUTF8());
+        if(rc)
+        {
+            std::cout << "couldn't open data socket" << std::endl;
+            std::cout << zmq_strerror(zmq_errno()) << std::endl;
+            assert(false);
+        }
         
     }
     return 0;
 }
 
-int ZmqInterface::close()
+int ZmqInterface::closeDataSocket()
 {
     if(socket)
     {
@@ -80,6 +92,77 @@ int ZmqInterface::close()
         assert(rc==0);
     }
     return 0;
+}
+
+void ZmqInterface::openListenSocket()
+{
+    startThread();
+}
+
+int ZmqInterface::closeListenSocket()
+{
+    int rc = 0;
+    std::cout << "close listen socket" << std::endl;
+    if(threadRunning)
+    {
+        threadRunning = false;
+        rc = zmq_close(listenSocket);
+        // TODO do we need to close the socket here? will this be called when acq is paused?
+    }
+    
+    return rc;
+}
+
+void ZmqInterface::run()
+{
+    listenSocket = zmq_socket(context, ZMQ_REP);
+    String urlstring;
+    urlstring = String("tcp://*:") + String(listenPort);
+    int rc = zmq_bind(listenSocket, urlstring.toRawUTF8()); // give the chance to change the port
+    assert(rc == 0);
+    threadRunning = true;
+    char* buffer = new char[MAX_MESSAGE_LENGTH];
+
+    int size;
+    while(threadRunning)
+    {
+        size = zmq_recv(listenSocket, buffer, MAX_MESSAGE_LENGTH-1, 0);
+        buffer[size] = 0;
+        std::cout << "received something" << std::endl;
+        std::cout << buffer << std::endl;
+        
+        if(size < 0)
+        {
+            std::cout << "failed in receiving listen socket" << std::endl;
+            std::cout << zmq_strerror(zmq_errno()) << std::endl;
+            assert(false);
+        }
+        var v;
+#ifdef ZMQ_DEBUG
+        std::cout << "in listening thread: " << String(buffer) << std::endl;
+#endif
+        Result rs = JSON::parse(String(buffer), v);
+        bool ok = rs.wasOk();
+        DynamicObject::Ptr obj = new DynamicObject(*v.getDynamicObject());
+        lock.enter();
+        networkMessagesQueue.push(obj);
+        lock.exit();
+        String response;
+        if(ok)
+        {
+            response = String("message correctly parsed");
+        }
+        else
+        {
+            response = String("JSON message could not be read");
+        }
+        zmq_send(listenSocket, response.getCharPointer(), response.length(), 0);
+        
+    }
+    closeListenSocket();
+    delete buffer;
+    threadRunning = false;
+    return;
 }
 
 /* format for passing data
@@ -118,18 +201,6 @@ int ZmqInterface::sendData(float *data, int nChannels, int nSamples, int nRealSa
     
     messageNumber++;
     
-//    MemoryOutputStream jsonHeader;
-//    jsonHeader << "{ \"messageNo\": " << messageNumber << "," << newLine;
-//    jsonHeader << "  \"type\": \"data\"," << newLine;
-//    jsonHeader << " \"content\": " << newLine;
-//    jsonHeader << "{ \"nChannels\": " << nChannels << "," << newLine;
-//    jsonHeader << " \"nSamples\": " << nSamples << "," << newLine;
-//    jsonHeader << " \"nRealSamples\": " << nRealSamples <<  newLine;
-//    jsonHeader << "}," << newLine;
-//    jsonHeader << " \"dataSize\": " << (int)(nChannels * nSamples * sizeof(float)) << newLine;
-//    jsonHeader << "}";
-//    
-//    MemoryBlock headerBlock = jsonHeader.getMemoryBlock();
 
     DynamicObject::Ptr obj = new DynamicObject();
     
@@ -151,15 +222,21 @@ int ZmqInterface::sendData(float *data, int nChannels, int nSamples, int nRealSa
     String s = JSON::toString(json);
     void *headerData = (void *)s.toRawUTF8();
     
-//    std::cout << "the string: " << s << std::endl;
-//    std::cout << "length: " << s.length() << std::endl;
-//    std::cout << (char *)headerData << std::endl;
+
     size_t headerSize = s.length();
+    
+    zmq_msg_t messageEnvelope;
+    zmq_msg_init_size(&messageEnvelope, strlen("DATA")+1);
+    memcpy(zmq_msg_data(&messageEnvelope), "DATA", strlen("DATA")+1);
+    int size = zmq_msg_send(&messageEnvelope, socket, ZMQ_SNDMORE);
+    jassert(size != -1);
+    zmq_msg_close(&messageEnvelope);
+    
     
     zmq_msg_t messageHeader;
     zmq_msg_init_size(&messageHeader, headerSize);
     memcpy(zmq_msg_data(&messageHeader), headerData, headerSize);
-    int size = zmq_msg_send(&messageHeader, socket, ZMQ_SNDMORE);
+    size = zmq_msg_send(&messageHeader, socket, ZMQ_SNDMORE);
     jassert(size != -1);
     zmq_msg_close(&messageHeader);
     // std::cout << "size: " << size << std::endl;
@@ -175,15 +252,7 @@ int ZmqInterface::sendData(float *data, int nChannels, int nSamples, int nRealSa
     return size;
 }
 
-/*
- uint8 type,
- int sampleNum,
- uint8 eventId,
- uint8 eventChannel,
- uint8 numBytes,
- uint8* eventData,
- bool isTimestamp
- */
+
 int ZmqInterface::sendEvent( uint8 type,
                              int sampleNum,
                              uint8 eventId,
@@ -194,19 +263,6 @@ int ZmqInterface::sendEvent( uint8 type,
     int size;
     
     messageNumber++;
-
-//    MemoryOutputStream jsonHeader;
-//    jsonHeader << "{ \"messageNo\": " << messageNumber << "," << newLine;
-//    jsonHeader << "  \"type\": \"event\"," << newLine;
-//    jsonHeader << " \"content\": " << newLine;
-//    jsonHeader << " { \"type\": " << type << "," << newLine;
-//    jsonHeader << " \"sampleNum\": " << sampleNum << "," << newLine;
-//    jsonHeader << " \"eventId\": " << eventId << "," << newLine;
-//    jsonHeader << " \"eventChannel\": " << eventChannel  << newLine;
-//    jsonHeader << "}," << newLine;
-//    jsonHeader << " \"dataSize\": " << numBytes << newLine;
-//    jsonHeader << "}";
-//    MemoryBlock headerBlock = jsonHeader.getMemoryBlock();
     
     DynamicObject::Ptr obj = new DynamicObject();
     
@@ -225,6 +281,15 @@ int ZmqInterface::sendEvent( uint8 type,
     String s = JSON::toString(json);
     void *headerData = (void *)s.toRawUTF8();
     size_t headerSize = s.length();
+    
+    
+    zmq_msg_t messageEnvelope;
+    zmq_msg_init_size(&messageEnvelope, strlen("EVENT")+1);
+    memcpy(zmq_msg_data(&messageEnvelope), "EVENT", strlen("EVENT")+1);
+    size = zmq_msg_send(&messageEnvelope, socket, ZMQ_SNDMORE);
+    jassert(size != -1);
+    zmq_msg_close(&messageEnvelope);
+    
     zmq_msg_t messageHeader;
     zmq_msg_init_size(&messageHeader, headerSize);
     memcpy(zmq_msg_data(&messageHeader), headerData, headerSize);
@@ -280,6 +345,14 @@ template<typename T> int ZmqInterface::sendParam(String name, T value)
     String s = JSON::toString(json);
     void *headerData = (void *)s.toRawUTF8();
     size_t headerSize = s.length();
+    
+    zmq_msg_t messageEnvelope;
+    zmq_msg_init_size(&messageEnvelope, strlen("PARAM")+1);
+    memcpy(zmq_msg_data(&messageEnvelope), "PARAM", strlen("PARAM")+1);
+    size = zmq_msg_send(&messageEnvelope, socket, ZMQ_SNDMORE);
+    jassert(size != -1);
+    zmq_msg_close(&messageEnvelope);
+    
     
     zmq_msg_t messageHeader;
     zmq_msg_init_size(&messageHeader, headerSize);
