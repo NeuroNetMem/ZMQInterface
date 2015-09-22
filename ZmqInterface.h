@@ -97,14 +97,16 @@ public:
     void resetConnections();
     void run();
 
+    StringArray getApplicationList();
 
     // TODO void saveCustomParametersToXml(XmlElement* parentElement);
     // TODO void loadCustomParametersFromXml();
 
-    CriticalSection lock;
     bool threadRunning ;
     // TODO void setNewListeningPort(int port);
 
+    
+    
 private:
     int createContext();
     void openListenSocket();

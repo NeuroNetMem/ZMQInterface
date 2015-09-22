@@ -36,6 +36,7 @@
 #include <time.h>
 #include <errno.h>
 #include "ZmqInterface.h"
+#include "ZmqInterfaceEditor.h"
 
 #define DEBUG_ZMQ
 const int MAX_MESSAGE_LENGTH = 64000;
@@ -88,6 +89,17 @@ ZmqInterface::~ZmqInterface()
         zmq_ctx_destroy(context);
         context = 0;
     }
+}
+
+StringArray ZmqInterface::getApplicationList()
+{
+    
+    // TODO mock implementation!
+    StringArray ar;
+    ar.add(String("Mango"));
+    ar.add(String("Banana"));
+    ar.add(String("Papaya"));
+    return ar;
 }
 
 int ZmqInterface::createContext()
@@ -481,7 +493,7 @@ AudioProcessorEditor* ZmqInterface::createEditor()
 {
     
     //        std::cout << "in PythonEditor::createEditor()" << std::endl;
-    editor = new GenericEditor(this, true); //TODO change it into something specific
+    editor = new ZmqInterfaceEditor(this, true); //TODO change it into something specific
     return editor;
 }
 

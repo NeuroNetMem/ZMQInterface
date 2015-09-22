@@ -46,13 +46,17 @@ class ZmqInterfaceEditor: public GenericEditor
 public:
     ZmqInterfaceEditor(GenericProcessor *parentNode, bool useDefaultParameters);
     virtual ~ZmqInterfaceEditor();
+    void saveCustomParameters(XmlElement *xml);
+    void loadCustomParameters(XmlElement* xml);
     
 private:
     //TODO UI components
     class ZmqInterfaceEditorListBox;
-    
-    
-    
+    StringArray getApplicationList();
+    ZmqInterface *ZmqProcessor;
+    ZmqInterfaceEditorListBox *listBox;
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ZmqInterfaceEditor)
+
     
 };
 
