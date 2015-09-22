@@ -55,14 +55,12 @@ public:
         
         setColour(backgroundColourId, backgroundColor);
         
-        items = editor->getApplicationList();
         refresh();
 
     }
     
     void refresh()
     {
-        items = editor->getApplicationList();
         updateContent();
         repaint();
         
@@ -71,11 +69,14 @@ public:
     int getNumRows() override
     {
         return editor->getApplicationList()->size();
+        std::cout << "zeditor num rows" << std::endl;
     }
     
     
     void paintListBoxItem (int row, Graphics& g, int width, int height, bool rowIsSelected) override
     {
+        std::cout << "zeditor item paint" << std::endl;
+        OwnedArray<ZmqApplication> *items = editor->getApplicationList();
         if (isPositiveAndBelow (row, items->size()))
         {
             g.fillAll(Colour(155, 155, 155));
@@ -106,10 +107,11 @@ public:
     
     void paint (Graphics& g) override
     {
+        std::cout << "zeditor paint" << std::endl;
         ListBox::paint (g);
         g.setColour (Colours::grey);
         g.setGradientFill(backgroundGradient);
-        if (items->size() == 0)
+        if (editor->getApplicationList()->size() == 0)
         {
             g.setColour (Colours::grey);
             g.setFont (13.0f);
@@ -123,7 +125,6 @@ public:
     
     
 private:
-    OwnedArray<ZmqApplication> *items;
     const String noItemsMessage;
     ZmqInterfaceEditor *editor;
     /** Stores the editor's background color. */

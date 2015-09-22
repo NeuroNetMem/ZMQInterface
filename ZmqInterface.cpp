@@ -63,23 +63,23 @@ ZmqInterface::ZmqInterface(const String &processorName)
     openKillSocket();
     
     
-    // TODO initialize structures to keep track of apps
     // TODO mock implementation
-    
+//    
     ZmqApplication *z = new ZmqApplication();
     z->name = String("Mango");
     z->alive = true;
+    z->Uuid = String("bau");
     applications.add(z);
     
-    z = new ZmqApplication();
-    z->name = String("Banana");
-    z->alive = false;
-    applications.add(z);
-    
-    z = new ZmqApplication();
-    z->name = String("Papaya");
-    z->alive = true;
-    applications.add(z);
+//    z = new ZmqApplication();
+//    z->name = String("Banana");
+//    z->alive = false;
+//    applications.add(z);
+//    
+//    z = new ZmqApplication();
+//    z->name = String("Papaya");
+//    z->alive = true;
+//    applications.add(z);
 
     
 }
@@ -251,9 +251,9 @@ void ZmqInterface::run()
                 ed.numBytes = 0; // TODO  allow for event data
                 ed.sampleNum = (int)v["event"]["sample_num"];
                 ed.type = (int)v["event"]["type"];
-                std::cout << "chan " << (int)ed.eventChannel << " id " << (int)ed.eventId << " sample n "
-                    << (int)ed.sampleNum << " type " << (int)ed.type <<
-                    std::endl;
+//                std::cout << "chan " << (int)ed.eventChannel << " id " << (int)ed.eventId << " sample n "
+//                    << (int)ed.sampleNum << " type " << (int)ed.type <<
+//                    std::endl;
             }
             else
             {
@@ -263,8 +263,6 @@ void ZmqInterface::run()
             // TODO allow for event data
             
             
-            
-            // TODO send it to process thread
             
             zmq_msg_t message;
             zmq_msg_init_size(&message, sizeof(EventData));
@@ -505,7 +503,7 @@ AudioProcessorEditor* ZmqInterface::createEditor()
 {
     
     //        std::cout << "in PythonEditor::createEditor()" << std::endl;
-    editor = new ZmqInterfaceEditor(this, true); //TODO change it into something specific
+    editor = new ZmqInterfaceEditor(this, true);
     return editor;
 }
 
@@ -574,16 +572,65 @@ int ZmqInterface::receiveEvents(MidiBuffer &events)
                 std::cout << "pipe out error: " << zmq_strerror(zmq_errno()) << std::endl;
             }
         }
-        std::cout << "adding events" << std::endl;
-        std::cout << "chan " << (int)ed.eventChannel << " id " << (int)ed.eventId << " sample n "
-        << (int)ed.sampleNum << " type " << (int)ed.type <<
-        std::endl;
+//        std::cout << "adding events" << std::endl;
+//        std::cout << "chan " << (int)ed.eventChannel << " id " << (int)ed.eventId << " sample n "
+//        << (int)ed.sampleNum << " type " << (int)ed.type <<
+//        std::endl;
         
-        addEvent(events, ed.type, ed.sampleNum, ed.eventId, ed.eventChannel, ed.numBytes, NULL, false);
+        int appNo = -1;
+        for(int i = 0; i < applications.size(); i++)
+        {
+            ZmqApplication *app = applications[i];
+            if(app->Uuid == String(ed.uuid))
+            {
+                appNo = i;
+                app->lastSeen = ed.eventTime;
+                app->alive = true;
+                break;
+            }
+        }
+
+        if(appNo == -1)
+        {
+            ZmqApplication *app = new ZmqApplication;
+            app->name = String(ed.application);
+            app->Uuid = String(ed.uuid);
+            app->lastSeen = ed.eventTime;
+            app->alive = true;
+            applications.add(app);
+            std::cout << "adding new application " << app->name << " " << app->Uuid << std::endl;
+            std::cout << " now there are " << applications.size() << " apps" << std::endl;
+//            MessageManagerLock mmlock;
+//            editor->repaint();
+    
+        }
+
+
+            
+        
+        if(ed.isEvent)
+            addEvent(events, ed.type, ed.sampleNum, ed.eventId, ed.eventChannel, ed.numBytes, NULL, false);
         // TODO allow for event data
     }
 
     return 0;
+}
+
+void ZmqInterface::checkForApplications()
+{
+    time_t timeNow = time(NULL);
+    for(int i = 0; i < applications.size(); i++)
+    {
+        ZmqApplication *app = applications[i];
+        if((timeNow - app->lastSeen) > 10 && app->alive)
+        {
+            app->alive = false;
+            std::cout << "app " << app->name << " not alive" << std::endl;
+            MessageManagerLock mmlock;
+            editor->repaint();
+        }
+    }
+
 }
 
 void ZmqInterface::process(AudioSampleBuffer& buffer,
@@ -601,6 +648,7 @@ void ZmqInterface::process(AudioSampleBuffer& buffer,
     sendData(*(buffer.getArrayOfWritePointers()), buffer.getNumChannels(), buffer.getNumSamples(), getNumSamples(0));
     
     receiveEvents(events);
+    checkForApplications();
     
 }
 

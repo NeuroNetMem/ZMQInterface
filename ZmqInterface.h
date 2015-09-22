@@ -133,6 +133,7 @@ private:
                   uint8 numBytes,
                   const uint8* eventData);
     int receiveEvents(MidiBuffer &events);
+    void checkForApplications();
     
     template<typename T> int sendParam(String name, T value);
 
