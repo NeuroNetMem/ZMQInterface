@@ -40,6 +40,14 @@
 #include <queue>
 
 
+struct ZmqApplication {
+    String name;
+    String Uuid;
+    time_t lastSeen;
+    bool alive;
+};
+
+
 //=============================================================================
 /*
  */
@@ -97,7 +105,7 @@ public:
     void resetConnections();
     void run();
 
-    StringArray getApplicationList();
+    OwnedArray<ZmqApplication> *getApplicationList();
 
     // TODO void saveCustomParametersToXml(XmlElement* parentElement);
     // TODO void loadCustomParametersFromXml();
@@ -136,6 +144,9 @@ private:
     void *killSocket = 0;
     void *pipeInSocket = 0;
     void *pipeOutSocket = 0;
+    
+    
+    OwnedArray<ZmqApplication> applications;
     
     int flag = 0;
     int messageNumber = 0;

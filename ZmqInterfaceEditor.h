@@ -39,7 +39,7 @@
 #include "../Editors/GenericEditor.h"
 
 class ZmqInterface;
-
+struct ZmqApplication;
 
 class ZmqInterfaceEditor: public GenericEditor
 {
@@ -52,7 +52,7 @@ public:
 private:
     //TODO UI components
     class ZmqInterfaceEditorListBox;
-    StringArray getApplicationList();
+    OwnedArray<ZmqApplication> *getApplicationList();
     ZmqInterface *ZmqProcessor;
     ZmqInterfaceEditorListBox *listBox;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ZmqInterfaceEditor)

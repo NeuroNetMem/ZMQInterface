@@ -46,13 +46,22 @@ public:
     {
         editor = e;
         setModel(this);
+        
+        backgroundGradient = ColourGradient(Colour(190, 190, 190), 0.0f, 0.0f,
+                                            Colour(185, 185, 185), 0.0f, 120.0f, false);
+        backgroundGradient.addColour(0.2f, Colour(155, 155, 155));
+        
+        backgroundColor = Colour(155, 155, 155);
+        
+        setColour(backgroundColourId, backgroundColor);
+        
+        items = editor->getApplicationList();
         refresh();
 
     }
     
     void refresh()
     {
-        items.clear();
         items = editor->getApplicationList();
         updateContent();
         repaint();
@@ -61,29 +70,30 @@ public:
     
     int getNumRows() override
     {
-        return items.size();
+        return editor->getApplicationList()->size();
     }
     
     
     void paintListBoxItem (int row, Graphics& g, int width, int height, bool rowIsSelected) override
     {
-        if (isPositiveAndBelow (row, items.size()))
+        if (isPositiveAndBelow (row, items->size()))
         {
+            g.fillAll(Colour(155, 155, 155));
             if (rowIsSelected)
                 g.fillAll (findColour (TextEditor::highlightColourId)
                            .withMultipliedAlpha (0.3f));
             
-            const String item (items [row]); // TODO change when we put a map
+            ZmqApplication *i = (*items)[row];
+            const String item (i->name); // TODO change when we put a map
             bool enabled = false;
             
             const int x = getTickX();
-            // const float tickW = height * 0.75f;
-            
-            
-            //getLookAndFeel().drawTickBox (g, *this, x - tickW, (height - tickW) / 2, tickW, tickW, enabled, true, true, false);
             
             g.setFont (height * 0.6f);
-            g.setColour (findColour (ListBox::textColourId, true).withMultipliedAlpha (enabled ? 1.0f : 0.6f));
+            if(i->alive)
+                g.setColour(Colours::green);
+            else
+                g.setColour(Colours::red);
             g.drawText (item, x, 0, width - x - 2, height, Justification::centredLeft, true);
         } // end of function
     }
@@ -97,8 +107,9 @@ public:
     void paint (Graphics& g) override
     {
         ListBox::paint (g);
-        
-        if (items.size() == 0)
+        g.setColour (Colours::grey);
+        g.setGradientFill(backgroundGradient);
+        if (items->size() == 0)
         {
             g.setColour (Colours::grey);
             g.setFont (13.0f);
@@ -112,10 +123,14 @@ public:
     
     
 private:
-    StringArray items;
+    OwnedArray<ZmqApplication> *items;
     const String noItemsMessage;
     ZmqInterfaceEditor *editor;
+    /** Stores the editor's background color. */
+    Colour backgroundColor;
     
+    /** Stores the editor's background gradient. */
+    ColourGradient backgroundGradient;
     
     int getTickX() const
     {
@@ -129,7 +144,7 @@ ZmqInterfaceEditor::ZmqInterfaceEditor(GenericProcessor *parentNode, bool useDef
 {
     ZmqProcessor = (ZmqInterface *)parentNode;
     listBox = new ZmqInterfaceEditorListBox(String("no app connected"), this);
-    listBox->setBounds(0,0,140,150);
+    listBox->setBounds(2,25,130,105);
     addAndMakeVisible(listBox);
     setEnabledState(false);
     
@@ -151,9 +166,9 @@ void ZmqInterfaceEditor::loadCustomParameters(XmlElement* xml)
 }
 
 
-StringArray ZmqInterfaceEditor::getApplicationList()
+OwnedArray<ZmqApplication> *ZmqInterfaceEditor::getApplicationList()
 {
-    StringArray ar = ZmqProcessor->getApplicationList();
+    OwnedArray<ZmqApplication> *ar = ZmqProcessor->getApplicationList();
     return ar;
     
 }

@@ -53,6 +53,7 @@ struct EventData {
     bool isEvent;
 };
 
+
 ZmqInterface::ZmqInterface(const String &processorName)
     : GenericProcessor(processorName), Thread("Zmq thread")
 {
@@ -61,8 +62,25 @@ ZmqInterface::ZmqInterface(const String &processorName)
     openListenSocket();
     openKillSocket();
     
-    // TODO initialize structures to keep track of apps
     
+    // TODO initialize structures to keep track of apps
+    // TODO mock implementation
+    
+    ZmqApplication *z = new ZmqApplication();
+    z->name = String("Mango");
+    z->alive = true;
+    applications.add(z);
+    
+    z = new ZmqApplication();
+    z->name = String("Banana");
+    z->alive = false;
+    applications.add(z);
+    
+    z = new ZmqApplication();
+    z->name = String("Papaya");
+    z->alive = true;
+    applications.add(z);
+
     
 }
 
@@ -91,15 +109,9 @@ ZmqInterface::~ZmqInterface()
     }
 }
 
-StringArray ZmqInterface::getApplicationList()
+OwnedArray<ZmqApplication> *ZmqInterface::getApplicationList()
 {
-    
-    // TODO mock implementation!
-    StringArray ar;
-    ar.add(String("Mango"));
-    ar.add(String("Banana"));
-    ar.add(String("Papaya"));
-    return ar;
+    return &applications;
 }
 
 int ZmqInterface::createContext()
