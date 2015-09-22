@@ -44,9 +44,10 @@ public:
     ZmqInterfaceEditorListBox(const String noItemsText, ZmqInterfaceEditor *e):
     ListBox(String::empty, nullptr), noItemsMessage(noItemsText)
     {
-        refresh();
-        setModel(this);
         editor = e;
+        setModel(this);
+        refresh();
+
     }
     
     void refresh()
@@ -76,10 +77,10 @@ public:
             bool enabled = false;
             
             const int x = getTickX();
-            const float tickW = height * 0.75f;
+            // const float tickW = height * 0.75f;
             
             
-            getLookAndFeel().drawTickBox (g, *this, x - tickW, (height - tickW) / 2, tickW, tickW, enabled, true, true, false);
+            //getLookAndFeel().drawTickBox (g, *this, x - tickW, (height - tickW) / 2, tickW, tickW, enabled, true, true, false);
             
             g.setFont (height * 0.6f);
             g.setColour (findColour (ListBox::textColourId, true).withMultipliedAlpha (enabled ? 1.0f : 0.6f));
@@ -128,7 +129,7 @@ ZmqInterfaceEditor::ZmqInterfaceEditor(GenericProcessor *parentNode, bool useDef
 {
     ZmqProcessor = (ZmqInterface *)parentNode;
     listBox = new ZmqInterfaceEditorListBox(String("no app connected"), this);
-    listBox->setBounds(20,80,140,150);
+    listBox->setBounds(0,0,140,150);
     addAndMakeVisible(listBox);
     setEnabledState(false);
     
@@ -152,7 +153,6 @@ void ZmqInterfaceEditor::loadCustomParameters(XmlElement* xml)
 
 StringArray ZmqInterfaceEditor::getApplicationList()
 {
-    int i = 0;
     StringArray ar = ZmqProcessor->getApplicationList();
     return ar;
     
