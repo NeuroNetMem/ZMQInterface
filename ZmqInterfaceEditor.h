@@ -48,6 +48,8 @@ public:
     virtual ~ZmqInterfaceEditor();
     void saveCustomParameters(XmlElement *xml);
     void loadCustomParameters(XmlElement* xml);
+    void refreshListAsync();
+    
     
 private:
     //TODO UI components

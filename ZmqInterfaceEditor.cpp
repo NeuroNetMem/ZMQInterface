@@ -38,7 +38,7 @@
 #include "ZmqInterface.h"
 
 class ZmqInterfaceEditor::ZmqInterfaceEditorListBox: public ListBox,
-private ListBoxModel
+private ListBoxModel, public AsyncUpdater
 {
 public:
     ZmqInterfaceEditorListBox(const String noItemsText, ZmqInterfaceEditor *e):
@@ -59,6 +59,11 @@ public:
 
     }
     
+    void handleAsyncUpdate()
+    {
+        refresh();
+    }
+    
     void refresh()
     {
         updateContent();
@@ -69,13 +74,11 @@ public:
     int getNumRows() override
     {
         return editor->getApplicationList()->size();
-        std::cout << "zeditor num rows" << std::endl;
     }
     
     
     void paintListBoxItem (int row, Graphics& g, int width, int height, bool rowIsSelected) override
     {
-        std::cout << "zeditor item paint" << std::endl;
         OwnedArray<ZmqApplication> *items = editor->getApplicationList();
         if (isPositiveAndBelow (row, items->size()))
         {
@@ -107,7 +110,6 @@ public:
     
     void paint (Graphics& g) override
     {
-        std::cout << "zeditor paint" << std::endl;
         ListBox::paint (g);
         g.setColour (Colours::grey);
         g.setGradientFill(backgroundGradient);
@@ -166,6 +168,10 @@ void ZmqInterfaceEditor::loadCustomParameters(XmlElement* xml)
     
 }
 
+void ZmqInterfaceEditor::refreshListAsync()
+{
+    listBox->triggerAsyncUpdate();
+}
 
 OwnedArray<ZmqApplication> *ZmqInterfaceEditor::getApplicationList()
 {

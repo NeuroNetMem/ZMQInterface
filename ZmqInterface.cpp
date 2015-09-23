@@ -65,11 +65,11 @@ ZmqInterface::ZmqInterface(const String &processorName)
     
     // TODO mock implementation
 //    
-    ZmqApplication *z = new ZmqApplication();
-    z->name = String("Mango");
-    z->alive = true;
-    z->Uuid = String("bau");
-    applications.add(z);
+//    ZmqApplication *z = new ZmqApplication();
+//    z->name = String("Mango");
+//    z->alive = true;
+//    z->Uuid = String("bau");
+//    applications.add(z);
     
 //    z = new ZmqApplication();
 //    z->name = String("Banana");
@@ -261,9 +261,6 @@ void ZmqInterface::run()
             }
             
             // TODO allow for event data
-            
-            
-            
             zmq_msg_t message;
             zmq_msg_init_size(&message, sizeof(EventData));
             memcpy(zmq_msg_data(&message), &ed, sizeof(EventData));
@@ -276,7 +273,14 @@ void ZmqInterface::run()
             String response;
             if(ok)
             {
-                response = String("message correctly parsed");
+                if(ed.isEvent)
+                {
+                    response = String("message correctly parsed");
+                }
+                else
+                {
+                    response = String("heartbeat received");
+                }
             }
             else
             {
@@ -583,9 +587,15 @@ int ZmqInterface::receiveEvents(MidiBuffer &events)
             ZmqApplication *app = applications[i];
             if(app->Uuid == String(ed.uuid))
             {
+                bool refreshEd = false;
                 appNo = i;
                 app->lastSeen = ed.eventTime;
+                if(!app->alive)
+                    refreshEd = true;
                 app->alive = true;
+                ZmqInterfaceEditor *zed =    dynamic_cast<ZmqInterfaceEditor *> (getEditor());
+                zed->refreshListAsync();
+
                 break;
             }
         }
@@ -600,6 +610,8 @@ int ZmqInterface::receiveEvents(MidiBuffer &events)
             applications.add(app);
             std::cout << "adding new application " << app->name << " " << app->Uuid << std::endl;
             std::cout << " now there are " << applications.size() << " apps" << std::endl;
+            ZmqInterfaceEditor *zed =    dynamic_cast<ZmqInterfaceEditor *> (getEditor());
+            zed->refreshListAsync();
 //            MessageManagerLock mmlock;
 //            editor->repaint();
     
@@ -626,8 +638,8 @@ void ZmqInterface::checkForApplications()
         {
             app->alive = false;
             std::cout << "app " << app->name << " not alive" << std::endl;
-            MessageManagerLock mmlock;
-            editor->repaint();
+            ZmqInterfaceEditor *zed =    dynamic_cast<ZmqInterfaceEditor *> (getEditor());
+            zed->refreshListAsync();
         }
     }
 
