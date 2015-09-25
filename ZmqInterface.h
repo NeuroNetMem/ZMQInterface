@@ -132,6 +132,8 @@ private:
                   uint8 eventChannel,
                   uint8 numBytes,
                   const uint8* eventData);
+    int sendSpikeEvent(MidiMessage &event);
+    
     int receiveEvents(MidiBuffer &events);
     void checkForApplications();
     

@@ -89,8 +89,7 @@ public:
             
             ZmqApplication *i = (*items)[row];
             const String item (i->name); // TODO change when we put a map
-            bool enabled = false;
-            
+                
             const int x = getTickX();
             
             g.setFont (height * 0.6f);
