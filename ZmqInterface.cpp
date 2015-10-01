@@ -138,7 +138,7 @@ int ZmqInterface::createDataSocket()
         {
             std::cout << "couldn't open data socket" << std::endl;
             std::cout << zmq_strerror(zmq_errno()) << std::endl;
-            assert(false);
+            jassert(false);
         }
         
     }
@@ -151,7 +151,7 @@ int ZmqInterface::closeDataSocket()
     {
         std::cout << "close data socket" << std::endl;
         int rc = zmq_close(socket);
-        assert(rc==0);
+        jassert(rc==0);
         socket = 0;
     }
     return 0;
@@ -193,7 +193,7 @@ void ZmqInterface::run()
     String urlstring;
     urlstring = String("tcp://*:") + String(listenPort);
     int rc = zmq_bind(listenSocket, urlstring.toRawUTF8()); // give the chance to change the port
-    assert(rc == 0);
+    jassert(rc == 0);
     threadRunning = true;
     char* buffer = new char[MAX_MESSAGE_LENGTH];
 
@@ -225,7 +225,7 @@ void ZmqInterface::run()
             {
                 std::cout << "failed in receiving listen socket" << std::endl;
                 std::cout << zmq_strerror(zmq_errno()) << std::endl;
-                assert(false);
+                jassert(false);
             }
             var v;
 #ifdef ZMQ_DEBUG
@@ -409,9 +409,9 @@ int ZmqInterface::sendSpikeEvent(MidiMessage &event)
             obj->setProperty("message_no", messageNumber);
             obj->setProperty("type", "spike");
             DynamicObject::Ptr c_obj = new DynamicObject();
-            c_obj->setProperty("timestamp", spike.timestamp);
+            c_obj->setProperty("timestamp", (int64)spike.timestamp);
             c_obj->setProperty("timestamp_software",
-                             spike.timestamp_software);
+                             (int64)spike.timestamp_software);
             c_obj->setProperty("n_channels", spike.nChannels);
             c_obj->setProperty("n_samples", spike.nSamples);
             c_obj->setProperty("electrode_id", spike.electrodeID);
