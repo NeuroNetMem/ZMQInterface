@@ -6,7 +6,16 @@
 	objectVersion = 46;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		F700B0081D5E1B0C00C56CC4 /* Plugin_Debug.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = F700B0051D5E1B0C00C56CC4 /* Plugin_Debug.xcconfig */; };
+		F700B0091D5E1B0C00C56CC4 /* Plugin_Release.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = F700B0061D5E1B0C00C56CC4 /* Plugin_Release.xcconfig */; };
+		F700B00A1D5E1B0C00C56CC4 /* Plugin.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = F700B0071D5E1B0C00C56CC4 /* Plugin.xcconfig */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
+		F700B0051D5E1B0C00C56CC4 /* Plugin_Debug.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; name = Plugin_Debug.xcconfig; path = Config/Plugin_Debug.xcconfig; sourceTree = "<group>"; };
+		F700B0061D5E1B0C00C56CC4 /* Plugin_Release.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; name = Plugin_Release.xcconfig; path = Config/Plugin_Release.xcconfig; sourceTree = "<group>"; };
+		F700B0071D5E1B0C00C56CC4 /* Plugin.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; name = Plugin.xcconfig; path = Config/Plugin.xcconfig; sourceTree = "<group>"; };
 		F7F7D18B1D5E181500DCF6CF /* ZMQInterface.bundle */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ZMQInterface.bundle; sourceTree = BUILT_PRODUCTS_DIR; };
 		F7F7D18E1D5E181500DCF6CF /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -22,9 +31,20 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		F700B0041D5E1AF500C56CC4 /* Config */ = {
+			isa = PBXGroup;
+			children = (
+				F700B0051D5E1B0C00C56CC4 /* Plugin_Debug.xcconfig */,
+				F700B0061D5E1B0C00C56CC4 /* Plugin_Release.xcconfig */,
+				F700B0071D5E1B0C00C56CC4 /* Plugin.xcconfig */,
+			);
+			name = Config;
+			sourceTree = "<group>";
+		};
 		F7F7D1821D5E181500DCF6CF = {
 			isa = PBXGroup;
 			children = (
+				F700B0041D5E1AF500C56CC4 /* Config */,
 				F7F7D18D1D5E181500DCF6CF /* ZMQInterface */,
 				F7F7D18C1D5E181500DCF6CF /* Products */,
 			);
@@ -102,6 +122,9 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F700B0081D5E1B0C00C56CC4 /* Plugin_Debug.xcconfig in Resources */,
+				F700B00A1D5E1B0C00C56CC4 /* Plugin.xcconfig in Resources */,
+				F700B0091D5E1B0C00C56CC4 /* Plugin_Release.xcconfig in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -120,6 +143,7 @@
 /* Begin XCBuildConfiguration section */
 		F7F7D18F1D5E181500DCF6CF /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = F700B0051D5E1B0C00C56CC4 /* Plugin_Debug.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
@@ -164,6 +188,7 @@
 		};
 		F7F7D1901D5E181500DCF6CF /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = F700B0061D5E1B0C00C56CC4 /* Plugin_Release.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
@@ -244,6 +269,7 @@
 				F7F7D1931D5E181500DCF6CF /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
