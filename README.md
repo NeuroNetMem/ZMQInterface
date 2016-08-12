@@ -38,7 +38,7 @@ The rest of the procedure is system dependent
 
 
 ### Binary installation 
-A binary installation (Linux only for the time being) is provided in XXX
+A binary installation (Linux only for the time being) is provided [here](https://github.com/fpbattaglia/ZMQInterface-linux-binaries)
 
 - Use the Binary-distributed version of Open-Ephys or compile it from source with the Release configuration. 
 - Copy PythonPlugin.so to the `plugins` directory, and you are done. 
