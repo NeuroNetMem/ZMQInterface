@@ -1,5 +1,5 @@
-ZMQ_INCDIR:=/usr/local/include
-ZMQ_LIBDIR:=/usr/local/lib
+ZMQ_INCDIR:=$(ZMQ_PREFIX)/include
+ZMQ_LIBDIR:=$(ZMQ_PREFIX)/lib
 ZMQ_RTLIBDIR:=$(ZMQ_LIBDIR)
 
 LIBNAME := $(notdir $(CURDIR))
