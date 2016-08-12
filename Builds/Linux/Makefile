@@ -1,7 +1,6 @@
-PYTHON_HOME := $(CONDA_HOME)
-PYTHON_INCDIR := $(CONDA_HOME)/include/python3.5m
-PYTHON_LIBDIR := $(CONDA_HOME)/lib
-PYTHON_RTLIBDIR := $(PYTHON_LIBDIR)
+ZMQ_INCDIR:=/usr/local/include
+ZMQ_LIBDIR:=/usr/local/lib
+ZMQ_RTLIBDIR:=$(ZMQ_LIBDIR)
 
 LIBNAME := $(notdir $(CURDIR))
 OBJDIR := $(OBJDIR)/$(LIBNAME)
@@ -17,9 +16,8 @@ OBJ := $(addprefix $(OBJDIR)/,$(notdir $(SRC:.cpp=.o)))
 
 
 #Extra macros and libraries needed by the plugin
-#CXXFLAGS := $(CXXFLAGS) -D "PYTHON_HOME=$(PYTHON_HOME)" -I $(PYTHON_INCDIR)
-CXXFLAGS := $(CXXFLAGS) -D "PYTHON_HOME=$(PYTHON_HOME)" -I $(PYTHON_INCDIR)
-LDFLAGS := $(LDFLAGS) -lpython3.5m -L$(PYTHON_LIBDIR) -Wl,-rpath=$(PYTHON_RTLIBDIR)
+CXXFLAGS := $(CXXFLAGS)  -I $(ZMQ_INCDIR)
+LDFLAGS := $(LDFLAGS) -lzmq -L$(ZMQ_LIBDIR) -Wl,-rpath=$(ZMQ_RTLIBDIR)
 
 
 BLDCMD := $(CXX) -shared -o $(OUTDIR)/$(TARGET) $(OBJ) $(LDFLAGS) $(RESOURCES) $(TARGET_ARCH)
@@ -37,7 +35,7 @@ $(OUTDIR)/$(TARGET): objdir $(OBJ)
 
 $(OBJDIR)/%.o : %.cpp
 	@echo "Compiling $<"
-	@$(CXX) $(CXXFLAGS) -o "$@" -c "$<"
+	$(CXX) $(CXXFLAGS) -o "$@" -c "$<"
 	
 	
 objdir:
