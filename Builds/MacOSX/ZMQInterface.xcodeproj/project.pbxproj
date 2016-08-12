@@ -12,16 +12,18 @@
 		F700B00A1D5E1B0C00C56CC4 /* Plugin.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = F700B0071D5E1B0C00C56CC4 /* Plugin.xcconfig */; };
 		F700B00F1D5E1CE400C56CC4 /* ZmqInterface.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F700B00B1D5E1CE400C56CC4 /* ZmqInterface.cpp */; };
 		F700B0101D5E1CE400C56CC4 /* ZmqInterfaceEditor.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F700B00D1D5E1CE400C56CC4 /* ZmqInterfaceEditor.cpp */; };
+		F700B0131D5E286D00C56CC4 /* OpenEphysLib.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F700B0121D5E286D00C56CC4 /* OpenEphysLib.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		F700B0051D5E1B0C00C56CC4 /* Plugin_Debug.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; name = Plugin_Debug.xcconfig; path = Config/Plugin_Debug.xcconfig; sourceTree = "<group>"; };
 		F700B0061D5E1B0C00C56CC4 /* Plugin_Release.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; name = Plugin_Release.xcconfig; path = Config/Plugin_Release.xcconfig; sourceTree = "<group>"; };
 		F700B0071D5E1B0C00C56CC4 /* Plugin.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; name = Plugin.xcconfig; path = Config/Plugin.xcconfig; sourceTree = "<group>"; };
-		F700B00B1D5E1CE400C56CC4 /* ZmqInterface.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ZmqInterface.cpp; sourceTree = "<group>"; };
-		F700B00C1D5E1CE400C56CC4 /* ZmqInterface.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ZmqInterface.h; sourceTree = "<group>"; };
-		F700B00D1D5E1CE400C56CC4 /* ZmqInterfaceEditor.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ZmqInterfaceEditor.cpp; sourceTree = "<group>"; };
-		F700B00E1D5E1CE400C56CC4 /* ZmqInterfaceEditor.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ZmqInterfaceEditor.h; sourceTree = "<group>"; };
+		F700B00B1D5E1CE400C56CC4 /* ZmqInterface.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ZmqInterface.cpp; path = ../../ZMQInterface/ZmqInterface.cpp; sourceTree = SOURCE_ROOT; };
+		F700B00C1D5E1CE400C56CC4 /* ZmqInterface.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ZmqInterface.h; path = ../../../ZMQInterface/ZmqInterface.h; sourceTree = "<group>"; };
+		F700B00D1D5E1CE400C56CC4 /* ZmqInterfaceEditor.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ZmqInterfaceEditor.cpp; path = ../../ZMQInterface/ZmqInterfaceEditor.cpp; sourceTree = SOURCE_ROOT; };
+		F700B00E1D5E1CE400C56CC4 /* ZmqInterfaceEditor.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ZmqInterfaceEditor.h; path = ../../ZMQInterface/ZmqInterfaceEditor.h; sourceTree = SOURCE_ROOT; };
+		F700B0121D5E286D00C56CC4 /* OpenEphysLib.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = OpenEphysLib.cpp; path = /Users/fpbatta/src/ZMQInterface/ZMQInterface/OpenEphysLib.cpp; sourceTree = "<absolute>"; };
 		F7F7D18B1D5E181500DCF6CF /* ZMQInterface.bundle */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ZMQInterface.bundle; sourceTree = BUILT_PRODUCTS_DIR; };
 		F7F7D18E1D5E181500DCF6CF /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -67,6 +69,7 @@
 		F7F7D18D1D5E181500DCF6CF /* ZMQInterface */ = {
 			isa = PBXGroup;
 			children = (
+				F700B0121D5E286D00C56CC4 /* OpenEphysLib.cpp */,
 				F700B00B1D5E1CE400C56CC4 /* ZmqInterface.cpp */,
 				F700B00C1D5E1CE400C56CC4 /* ZmqInterface.h */,
 				F700B00D1D5E1CE400C56CC4 /* ZmqInterfaceEditor.cpp */,
@@ -74,7 +77,7 @@
 				F7F7D18E1D5E181500DCF6CF /* Info.plist */,
 			);
 			path = ZMQInterface;
-			sourceTree = "<group>";
+			sourceTree = SOURCE_ROOT;
 		};
 /* End PBXGroup section */
 
@@ -86,6 +89,7 @@
 				F7F7D1871D5E181500DCF6CF /* Sources */,
 				F7F7D1881D5E181500DCF6CF /* Frameworks */,
 				F7F7D1891D5E181500DCF6CF /* Resources */,
+				F700B0111D5E240000C56CC4 /* ShellScript */,
 			);
 			buildRules = (
 			);
@@ -140,11 +144,28 @@
 		};
 /* End PBXResourcesBuildPhase section */
 
+/* Begin PBXShellScriptBuildPhase section */
+		F700B0111D5E240000C56CC4 /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "cp -R ~/src/ZMQInterface/Builds/MacOSX/build/Debug/open-ephys.app/Contents/PlugIns/ZMQInterface.bundle ~/src/plugin-GUI/Builds/MacOSX/build/Debug/open-ephys.app/Contents/PlugIns";
+		};
+/* End PBXShellScriptBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		F7F7D1871D5E181500DCF6CF /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F700B0131D5E286D00C56CC4 /* OpenEphysLib.cpp in Sources */,
 				F700B00F1D5E1CE400C56CC4 /* ZmqInterface.cpp in Sources */,
 				F700B0101D5E1CE400C56CC4 /* ZmqInterfaceEditor.cpp in Sources */,
 			);
@@ -173,6 +194,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_IDENTITY = "-";
+				CONFIGURATION_BUILD_DIR = "$(PROJECT_DIR)/build/$(CONFIGURATION)/open-ephys.app/Contents/PlugIns";
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -218,6 +240,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_IDENTITY = "-";
+				CONFIGURATION_BUILD_DIR = "$(PROJECT_DIR)/build/$(CONFIGURATION)/open-ephys.app/Contents/PlugIns";
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;

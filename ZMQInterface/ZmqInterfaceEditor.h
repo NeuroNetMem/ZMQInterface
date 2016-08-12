@@ -1,8 +1,12 @@
 /*
  ------------------------------------------------------------------
  
- This file is part of the Open Ephys GUI
- Copyright (C) 2015 Open Ephys
+ ZMQInterface
+ Copyright (C) 2016 FP Battaglia
+ 
+ based on
+ Open Ephys GUI
+ Copyright (C) 2013, 2015 Open Ephys
  
  ------------------------------------------------------------------
  
@@ -35,10 +39,9 @@
 #ifndef ZMQINTERFACEEDITOR_H_INCLUDED
 #define ZMQINTERFACEEDITOR_H_INCLUDED
 
-#include "../../JuceLibraryCode/JuceHeader.h"
-#include "../Editors/GenericEditor.h"
-
+#include <EditorHeaders.h>
 class ZmqInterface;
+
 struct ZmqApplication;
 
 class ZmqInterfaceEditor: public GenericEditor

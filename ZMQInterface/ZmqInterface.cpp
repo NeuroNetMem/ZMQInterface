@@ -1,8 +1,12 @@
 /*
  ------------------------------------------------------------------
  
- This file is part of the Open Ephys GUI
- Copyright (C) 2015 Open Ephys
+ ZMQInterface
+ Copyright (C) 2016 FP Battaglia
+ 
+ based on
+ Open Ephys GUI
+ Copyright (C) 2013, 2015 Open Ephys
  
  ------------------------------------------------------------------
  
@@ -20,7 +24,7 @@
  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  
  */
-/*
+/* 
   ==============================================================================
 
     ZmqInterface.cpp
@@ -35,7 +39,7 @@
 #include <iostream>
 #include <time.h>
 #include <errno.h>
-#include "../Visualization/SpikeObject.h"
+#include <SpikeLib.h>
 #include "ZmqInterface.h"
 #include "ZmqInterfaceEditor.h"
 
@@ -300,7 +304,7 @@ void ZmqInterface::run()
     
     zmq_close(pipeInSocket);
     zmq_close(controlSocket);
-    delete buffer;
+    delete[] buffer;
     threadRunning = false;
     return;
 }
